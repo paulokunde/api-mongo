@@ -1,0 +1,9 @@
+[api]
+port = "9000"
+
+[database]
+host = "localhost"
+port = "27017"
+user = "infra"
+pass = "pmscs.123"
+name = "infra"
