@@ -2,35 +2,34 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"log"
 
-	configs "github.com/paulokunde/api-mongo/Configs"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-var collection *mongo.Collection
-var ctx = context.TODO()
-
-func OpenConection() (*mongo.Client, error) {
-	conf := configs.GetDB()
-	//const uri = "mongodb://user:pass@sample.host:27017/?maxPoolSize=20&w=majority"
-	uri := fmt.Sprintf("mongodb://%s:%s@%s:%s/%s", conf.User, conf.Pass, conf.Host, conf.Port, conf.Database)
-	log.Printf("Formação da uri %v", uri)
-
-	clientOptions := options.Client().ApplyURI(uri)
-
-	client, err := mongo.Connect(ctx, clientOptions)
+func OpenConection() *mongo.Database {
+	clientOpts := options.Client().ApplyURI("mongodb://localhost:27017/?maxPoolSize=20&w=majority")
+	client, err := mongo.Connect(context.TODO(), clientOpts)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	err = client.Ping(ctx, nil)
-	if err != nil {
+	defer func() {
+		if err = client.Disconnect(context.TODO()); err != nil {
+			panic(err)
+		}
+	}()
+	// Call Ping to verify that the deployment is up and the Client was
+	// configured successfully. As mentioned in the Ping documentation, this
+	// reduces application resiliency as the server may be temporarily
+	// unavailable when Ping is called.
+	if err = client.Ping(context.TODO(), readpref.Primary()); err != nil {
 		log.Fatal(err)
 	}
 
-	//client.Database("infra")
-	return client, err
+	base := client.Database("testing")
+
+	return base
+
 }
